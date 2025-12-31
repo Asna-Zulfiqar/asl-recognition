@@ -1,20 +1,17 @@
-import tensorflow as tf
-from tensorflow.keras import layers, models
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import os
+from tensorflow import keras
 
 def create_model(num_classes):
-    model = models.Sequential([
-        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
-        layers.MaxPooling2D(2, 2),
-        layers.Conv2D(64, (3, 3), activation='relu'),
-        layers.MaxPooling2D(2, 2),
-        layers.Conv2D(128, (3, 3), activation='relu'),
-        layers.MaxPooling2D(2, 2),
-        layers.Flatten(),
-        layers.Dropout(0.5),
-        layers.Dense(512, activation='relu'),
-        layers.Dense(num_classes, activation='softmax')
+    model = keras.models.Sequential([
+        keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
+        keras.layers.MaxPooling2D(2, 2),
+        keras.layers.Conv2D(64, (3, 3), activation='relu'),
+        keras.layers.MaxPooling2D(2, 2),
+        keras.layers.Conv2D(128, (3, 3), activation='relu'),
+        keras.layers.MaxPooling2D(2, 2),
+        keras.layers.Flatten(),
+        keras.layers.Dropout(0.5),
+        keras.layers.Dense(512, activation='relu'),
+        keras.layers.Dense(num_classes, activation='softmax')
     ])
     return model
 
@@ -22,7 +19,7 @@ def train_asl_model():
     train_dir = 'data/asl_alphabet_train/asl_alphabet_train'
     test_dir = 'data/asl_alphabet_test/asl_alphabet_test'
     
-    train_datagen = ImageDataGenerator(
+    train_datagen = keras.ImageDataGenerator(
         rescale=1./255,
         rotation_range=20,
         width_shift_range=0.2,
@@ -31,7 +28,7 @@ def train_asl_model():
         validation_split=0.2
     )
     
-    test_datagen = ImageDataGenerator(rescale=1./255)
+    test_datagen = keras.ImageDataGenerator(rescale=1./255)
     
     train_generator = train_datagen.flow_from_directory(
         train_dir,
@@ -59,7 +56,7 @@ def train_asl_model():
     )
     
     # Custom callback to print accuracy after each epoch
-    class EpochCallback(tf.keras.callbacks.Callback):
+    class EpochCallback(keras.callbacks.Callback):
         def on_epoch_end(self, epoch, logs=None):
             print(f"Epoch {epoch + 1}/10 - Training Accuracy: {logs['accuracy']:.4f} - Validation Accuracy: {logs['val_accuracy']:.4f}")
     

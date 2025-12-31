@@ -2,6 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 import json
 import os
 from PIL import Image
@@ -10,7 +11,7 @@ import time
 class ASLDetector:
     def __init__(self, model_path='asl_model.h5', labels_path='class_labels.json'):
         if os.path.exists(model_path) and os.path.exists(labels_path):
-            self.model = tf.keras.models.load_model(model_path)
+            self.model = keras.models.load_model(model_path)
             with open(labels_path, 'r') as f:
                 class_indices = json.load(f)
             self.labels = {v: k for k, v in class_indices.items()}

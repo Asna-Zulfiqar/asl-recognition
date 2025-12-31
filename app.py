@@ -8,18 +8,19 @@ import time
 
 # ---------------- CONFIG ----------------
 IMG_SIZE = 224
-MODEL_PATH = "asl_model.h5"
-LABELS_PATH = "class_labels.json"
+MODEL_PATH = "asl_model.keras"
+LABEL_PATH = "class_labels.json"
 
 # ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model_and_labels():
-    model = tf.keras.models.load_model(MODEL_PATH)
-    with open(LABELS_PATH) as f:
-        labels = {v: k for k, v in json.load(f).items()}
-    return model, labels
+    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
 
-model, labels = load_model_and_labels()
+    with open(LABEL_PATH, "r") as f:
+        class_indices = json.load(f)
+
+    labels = {v: k for k, v in class_indices.items()}
+    return model, labels
 
 # ---------------- MEDIAPIPE ----------------
 mp_hands = mp.solutions.hands

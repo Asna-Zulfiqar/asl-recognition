@@ -1,4 +1,5 @@
 from tensorflow import keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 def create_model(num_classes):
     model = keras.models.Sequential([
@@ -19,7 +20,7 @@ def train_asl_model():
     train_dir = 'data/asl_alphabet_train/asl_alphabet_train'
     test_dir = 'data/asl_alphabet_test/asl_alphabet_test'
     
-    train_datagen = keras.ImageDataGenerator(
+    train_datagen = ImageDataGenerator(
         rescale=1./255,
         rotation_range=20,
         width_shift_range=0.2,
@@ -28,7 +29,7 @@ def train_asl_model():
         validation_split=0.2
     )
     
-    test_datagen = keras.ImageDataGenerator(rescale=1./255)
+    test_datagen = ImageDataGenerator(rescale=1./255)
     
     train_generator = train_datagen.flow_from_directory(
         train_dir,

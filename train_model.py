@@ -1,83 +1,78 @@
-from tensorflow import keras
+import tensorflow as tf
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras import layers, models
+import json
 
-def create_model(num_classes):
-    model = keras.models.Sequential([
-        keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(64, 64, 3)),
-        keras.layers.MaxPooling2D(2, 2),
-        keras.layers.Conv2D(64, (3, 3), activation='relu'),
-        keras.layers.MaxPooling2D(2, 2),
-        keras.layers.Conv2D(128, (3, 3), activation='relu'),
-        keras.layers.MaxPooling2D(2, 2),
-        keras.layers.Flatten(),
-        keras.layers.Dropout(0.5),
-        keras.layers.Dense(512, activation='relu'),
-        keras.layers.Dense(num_classes, activation='softmax')
-    ])
-    return model
+DATA_DIR = "data/processed_asl"
+IMG_SIZE = 224
+BATCH_SIZE = 32
+EPOCHS = 25
 
-def train_asl_model():
-    train_dir = 'data/asl_alphabet_train/asl_alphabet_train'
-    test_dir = 'data/asl_alphabet_test/asl_alphabet_test'
-    
-    train_datagen = ImageDataGenerator(
-        rescale=1./255,
-        rotation_range=20,
-        width_shift_range=0.2,
-        height_shift_range=0.2,
-        horizontal_flip=True,
-        validation_split=0.2
-    )
-    
-    test_datagen = ImageDataGenerator(rescale=1./255)
-    
-    train_generator = train_datagen.flow_from_directory(
-        train_dir,
-        target_size=(64, 64),
-        batch_size=32,
-        class_mode='categorical',
-        subset='training'
-    )
-    
-    validation_generator = train_datagen.flow_from_directory(
-        train_dir,
-        target_size=(64, 64),
-        batch_size=32,
-        class_mode='categorical',
-        subset='validation'
-    )
-    
-    num_classes = len(train_generator.class_indices)
-    model = create_model(num_classes)
-    
-    model.compile(
-        optimizer='adam',
-        loss='categorical_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    # Custom callback to print accuracy after each epoch
-    class EpochCallback(keras.callbacks.Callback):
-        def on_epoch_end(self, epoch, logs=None):
-            print(f"Epoch {epoch + 1}/10 - Training Accuracy: {logs['accuracy']:.4f} - Validation Accuracy: {logs['val_accuracy']:.4f}")
-    
-    history = model.fit(
-        train_generator,
-        epochs=10,
-        validation_data=validation_generator,
-        callbacks=[EpochCallback()],
-        verbose=1
-    )
-    
-    model.save('asl_model.h5')
-    
-    # Save class labels
-    import json
-    with open('class_labels.json', 'w') as f:
-        json.dump(train_generator.class_indices, f)
-    
-    print("Model saved as 'asl_model.h5'")
-    return model, train_generator.class_indices
+datagen = ImageDataGenerator(
+    rescale=1./255,
+    validation_split=0.2,
+    rotation_range=10,
+    zoom_range=0.1,
+    width_shift_range=0.05,
+    height_shift_range=0.05,
+    brightness_range=(0.8, 1.2)
+)
 
-if __name__ == "__main__":
-    train_asl_model()
+train_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    subset="training",
+    class_mode="categorical"
+)
+
+val_gen = datagen.flow_from_directory(
+    DATA_DIR,
+    target_size=(IMG_SIZE, IMG_SIZE),
+    batch_size=BATCH_SIZE,
+    subset="validation",
+    class_mode="categorical"
+)
+
+num_classes = train_gen.num_classes
+
+base_model = MobileNetV2(
+    weights="imagenet",
+    include_top=False,
+    input_shape=(IMG_SIZE, IMG_SIZE, 3)
+)
+
+base_model.trainable = False
+
+model = models.Sequential([
+    base_model,
+    layers.GlobalAveragePooling2D(),
+    layers.BatchNormalization(),
+    layers.Dense(256, activation="relu"),
+    layers.Dropout(0.5),
+    layers.Dense(num_classes, activation="softmax")
+])
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(1e-4),
+    loss="categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+callbacks = [
+    tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
+    tf.keras.callbacks.ModelCheckpoint("asl_model.h5", save_best_only=True)
+]
+
+model.fit(
+    train_gen,
+    validation_data=val_gen,
+    epochs=EPOCHS,
+    callbacks=callbacks
+)
+
+with open("class_labels.json", "w") as f:
+    json.dump(train_gen.class_indices, f)
+
+print("✅ Model trained and saved")

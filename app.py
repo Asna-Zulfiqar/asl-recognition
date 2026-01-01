@@ -58,6 +58,8 @@ if stop:
 
 # ---------------- CAMERA LOOP ----------------
 if st.session_state.run:
+    model, labels = load_model_and_labels()  # Load model here
+    
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 960)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)

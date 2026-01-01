@@ -36,8 +36,6 @@ val_gen = datagen.flow_from_directory(
 )
 
 num_classes = train_gen.num_classes
-
-# 🔑 EXPLICIT INPUT (THIS FIXES EVERYTHING)
 inputs = layers.Input(shape=(IMG_SIZE, IMG_SIZE, 3))
 
 base_model = MobileNetV2(
@@ -66,7 +64,7 @@ model.compile(
 callbacks = [
     tf.keras.callbacks.EarlyStopping(patience=5, restore_best_weights=True),
     tf.keras.callbacks.ModelCheckpoint(
-        "asl_model.keras",  # ✅ NEW FORMAT
+        "asl_model.keras",
         save_best_only=True
     )
 ]
@@ -78,7 +76,6 @@ model.fit(
     callbacks=callbacks
 )
 
-# ✅ SAVE LABELS PROPERLY
 with open("class_labels.json", "w") as f:
     json.dump(train_gen.class_indices, f)
 
